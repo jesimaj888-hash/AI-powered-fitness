@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fitness Dashboard | FitBuddy</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+    <header class="topbar">
+        <div class="container nav">
+            <div class="brand">FitBuddy</div>
+            <nav>
+                <a href="/">Home</a>
+                <a href="/profile">Profile</a>
+                <a href="/history/{{ user.id }}">Plan History</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="page-shell">
+        <div class="container dashboard">
+            <section class="hero-row card">
+                <div>
+                    <p class="eyebrow">Welcome</p>
+                    <h1>Welcome, {{ user.name }}! 👋</h1>
+                    <p>Goal: <strong>{{ user.fitness_goal }}</strong> | Intensity: <strong>{{ user.workout_intensity }}</strong></p>
+                </div>
+            </section>
+
+            <section class="stats-row">
+                <div class="stat-card card">
+                    <span class="stat-label">Weekly Minutes</span>
+                    <strong>{{ plan_summary.total_minutes }}</strong>
+                </div>
+                <div class="stat-card card">
+                    <span class="stat-label">Recovery Sessions</span>
+                    <strong>{{ plan_summary.recovery_days }}</strong>
+                </div>
+                <div class="stat-card card">
+                    <span class="stat-label">Focus Areas</span>
+                    <strong>{{ plan_summary.focus_areas|length }}</strong>
+                </div>
+            </section>
+
+            <section class="insights-row">
+                <div class="card insight-card">
+                    <div class="insight-header">
+                        <h3>Coach snapshot</h3>
+                        <button id="copyPlanBtn" class="btn secondary small">Copy summary</button>
+                    </div>
+                    {% if plan and plan.plan_data %}
+                        <p id="planSummaryText">
+                            This {{ user.fitness_goal|lower }} plan emphasizes {{ plan_summary.focus_areas|join(', ') if plan_summary.focus_areas else 'balanced full-body training' }} with {{ plan_summary.recovery_days }} recovery day(s). Your weekly workload is {{ plan_summary.total_minutes }} minutes.
+                        </p>
+                    {% else %}
+                        <p>Create your first plan to unlock FitBuddy coaching insights.</p>
+                    {% endif %}
+                </div>
+            </section>
+
+            <section class="dashboard-grid">
+                <div class="main-column">
+                    <div class="card plan-header">
+                        <h2>7-Day Personalized Plan</h2>
+                        {% if plan and plan.version %}
+                            <p class="muted">Viewing Version {{ plan.version }}</p>
+                        {% endif %}
+                    </div>
+                    {% if plan and plan.plan_data %}
+                        {% if plan_summary.focus_areas %}
+                            <div class="card focus-summary">
+                                <h3>Focus breakdown</h3>
+                                <div class="tag-list">
+                                    {% for focus in plan_summary.focus_areas %}
+                                        <span class="focus-tag">{{ focus }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+                        {% for day in plan.plan_data.days %}
+                            <article class="workout-card card">
+                                <div class="day-header">
+                                    <h3>{{ day.day }}</h3>
+                                    <span>{{ day.focus }}</span>
+                                </div>
+                                <ul>
+                                    {% for exercise in day.exercises %}
+                                        <li>{{ exercise.name }} – {{ exercise.sets }} × {{ exercise.reps }}</li>
+                                    {% endfor %}
+                                </ul>
+                                <p>Duration: {{ day.duration_minutes }} minutes</p>
+                                <p>Rest: {{ day.rest_period }}</p>
+                                <p class="muted">{{ day.explanation }}</p>
+                            </article>
+                        {% endfor %}
+                    {% else %}
+                        <div class="card empty-state">No active plan yet.</div>
+                    {% endif %}
+                </div>
+
+                <aside class="side-column">
+                    <div class="card">
+                        <h3>Want to improve your plan?</h3>
+                        <p>Tell FitBuddy what you want to change.</p>
+                        <textarea id="feedbackInput" rows="5" placeholder="Add more cardio and reduce heavy leg exercises."></textarea>
+                        <button id="refinePlanBtn" class="btn primary">Improve My Plan</button>
+                        <div id="refineStatus" class="status-message" hidden></div>
+                    </div>
+
+                    <div class="card">
+                        <h3>Today's Nutrition & Recovery Tip</h3>
+                        <button id="tipBtn" class="btn secondary">Generate Tip</button>
+                        <div id="tipResult" class="tip-result"></div>
+                    </div>
+
+                    <div class="card habits-card">
+                        <div class="habit-header">
+                            <h3>Daily habits</h3>
+                            <span id="habitProgressText" class="muted">0/3 done</span>
+                        </div>
+                        <div class="habit-list">
+                            <label class="habit-item">
+                                <input type="checkbox" data-habit="hydration" />
+                                <span>Hydration goal</span>
+                            </label>
+                            <label class="habit-item">
+                                <input type="checkbox" data-habit="recovery" />
+                                <span>Recovery walk</span>
+                            </label>
+                            <label class="habit-item">
+                                <input type="checkbox" data-habit="protein" />
+                                <span>Protein target</span>
+                            </label>
+                        </div>
+                        <div class="habit-progress">
+                            <div id="habitProgressBar" class="habit-progress-bar"></div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>Plan History</h3>
+                        {% if history %}
+                            {% for item in history %}
+                                <div class="history-item">
+                                    <strong>Version {{ item.version }}</strong>
+                                    <p>Created: {{ item.created_at.strftime('%d %b %Y') }}</p>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <p>No prior versions yet.</p>
+                        {% endif %}
+                    </div>
+                </aside>
+            </section>
+        </div>
+    </main>
+
+    <script src="/static/js/app.js"></script>
+    <script>
+        const userId = {{ user.id }};
+        window.userId = userId;
+    </script>
+</body>
+</html>
